@@ -1,5 +1,10 @@
 # Changelog
 
+[3.5.0-rc.1](https://github.com/jdalrymple/node-gitlab/tags/3.4.2) (2018-6-18)
+------------------
+**Breaking Change** 
+- Remove internal dependency on fs. Now users will need to pass in both the data to be uploaded as well as the filename
+
 [3.4.2](https://github.com/jdalrymple/node-gitlab/tags/3.4.2) (2018-6-06)
 ------------------
 - Fixing previous release errors [#100](https://github.com/jdalrymple/node-gitlab/issues/100)
