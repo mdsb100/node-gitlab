@@ -1,24 +1,17 @@
-import Humps from 'humps';
-import LinkParser from 'parse-link-header';
-import QS from 'qs';
-import URLJoin from 'url-join';
-import StreamableRequest from 'request';
+import Humps from "humps";
+import LinkParser from "parse-link-header";
+import QS from "qs";
+import URLJoin from "url-join";
 
 function defaultRequest(
-  { url, useXMLHttpRequest },
+  url,
   endpoint,
-  {
-    headers,
-    body,
-    qs,
-    formData,
-    resolveWithFullResponse = false,
-  },
+  { headers, body, qs, formData, fullResponse = false }
 ) {
   const params = {
     url: URLJoin(url, endpoint),
     headers,
-    json: true,
+    json: true
   };
 
   if (body) params.body = Humps.decamelizeKeys(body);
@@ -26,7 +19,10 @@ function defaultRequest(
   if (qs) {
     if (useXMLHttpRequest) {
       // The xhr package doesn't have a way of passing in a qs object until v3
-      params.url = URLJoin(params.url, `?${QS.stringify(Humps.decamelizeKeys(qs))}`);
+      params.url = URLJoin(
+        params.url,
+        `?${QS.stringify(Humps.decamelizeKeys(qs))}`
+      );
     } else {
       params.qs = Humps.decamelizeKeys(qs);
     }
@@ -40,13 +36,15 @@ function defaultRequest(
 }
 
 function getStream(service, endpoint, options = {}) {
-  if (service.useXMLHttpRequest) {
-    throw new Error('Cannot use streaming functionality with XMLHttpRequest. Please instantiate without this option to use streaming');
+  if (SUPPORTS_STREAMING.includes(service.requester) {
+    throw new Error(
+      "Cannot use streaming functionality with XMLHttpRequest. Please instantiate without this option to use streaming"
+    );
   }
 
   const requestOptions = defaultRequest(service, endpoint, {
     headers: service.headers,
-    qs: options,
+    qs: options
   });
 
   return StreamableRequest.get(requestOptions);
@@ -57,12 +55,12 @@ async function getPaginated(service, endpoint, options = {}) {
   const requestOptions = defaultRequest(service, endpoint, {
     headers: service.headers,
     qs: queryOptions,
-    resolveWithFullResponse: true,
+    fullResponse: true
   });
 
   const response = await service.requester.get(requestOptions);
   const links = LinkParser(response.headers.link) || {};
-  const page = response.headers['x-page'];
+  const page = response.headers["x-page"];
   const underMaxPageLimit = maxPages ? page < maxPages : true;
   let more = [];
   let data;
@@ -70,7 +68,11 @@ async function getPaginated(service, endpoint, options = {}) {
   // If not looking for a singular page and still under the max pages limit
   // AND their is a next page, paginate
   if (!queryOptions.page && underMaxPageLimit && links.next) {
-    more = await getPaginated(service, links.next.url.replace(service.url, ''), options);
+    more = await getPaginated(
+      service,
+      links.next.url.replace(service.url, ""),
+      options
+    );
     data = [...response.body, ...more];
   } else {
     data = response.body;
@@ -80,13 +82,13 @@ async function getPaginated(service, endpoint, options = {}) {
     return {
       data,
       pagination: {
-        total: response.headers['x-total'],
-        next: response.headers['x-next-page'] || null,
-        current: response.headers['x-page'] || null,
-        previous: response.headers['x-prev-page'] || null,
-        perPage: response.headers['x-per-page'],
-        totalPages: response.headers['x-total-pages'],
-      },
+        total: response.headers["x-total"],
+        next: response.headers["x-next-page"] || null,
+        current: response.headers["x-page"] || null,
+        previous: response.headers["x-prev-page"] || null,
+        perPage: response.headers["x-per-page"],
+        totalPages: response.headers["x-total-pages"]
+      }
     };
   }
 
@@ -101,10 +103,10 @@ class RequestHelper {
   }
 
   static post(service, endpoint, options = {}, form = false) {
-    const body = form ? 'formData' : 'body';
+    const body = form ? "formData" : "body";
     const requestOptions = defaultRequest(service, endpoint, {
       headers: service.headers,
-      [body]: options,
+      [body]: options
     });
 
     return service.requester.post(requestOptions);
@@ -113,7 +115,7 @@ class RequestHelper {
   static put(service, endpoint, options = {}) {
     const requestOptions = defaultRequest(service, endpoint, {
       headers: service.headers,
-      body: options,
+      body: options
     });
 
     return service.requester.put(requestOptions);
@@ -122,7 +124,7 @@ class RequestHelper {
   static delete(service, endpoint, options = {}) {
     const requestOptions = defaultRequest(service, endpoint, {
       headers: service.headers,
-      qs: options,
+      qs: options
     });
 
     return service.requester.delete(requestOptions);
